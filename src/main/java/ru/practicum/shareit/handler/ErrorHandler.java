@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.shareit.booking.controller.BookingController;
 import ru.practicum.shareit.item.controller.ItemController;
 import ru.practicum.shareit.item.exception.IllegalUserException;
 import ru.practicum.shareit.user.controller.UserController;
@@ -15,7 +16,8 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice(assignableTypes = {
         UserController.class,
-        ItemController.class
+        ItemController.class,
+        BookingController.class
 })
 public class ErrorHandler {
 
@@ -43,6 +45,15 @@ public class ErrorHandler {
         return new ResponseEntity<>(
                 Map.of("error", e.getMessage()),
                 HttpStatus.FORBIDDEN
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Map<String, String>> handleBookingByOwnerException(final IllegalArgumentException e) {
+        log.error("Server returned HttpCode 400: {}", e.getMessage(), e);
+        return new ResponseEntity<>(
+                Map.of("error", e.getMessage()),
+                HttpStatus.BAD_REQUEST
         );
     }
 }

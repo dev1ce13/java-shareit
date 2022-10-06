@@ -64,8 +64,8 @@ public class UserServiceImpl implements UserService {
                 return UserMapper.mapToUserDto(repository.save(newUser));
             } else {
                 throw new IllegalUserException(
-                        String.format("User with ID=%s does not have access to user with ID=%s"
-                                , userId, oldUser.get().getId())
+                        String.format("User with ID=%s does not have access to user with ID=%s",
+                                userId, oldUser.get().getId())
                 );
             }
         } else {

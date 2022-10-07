@@ -14,11 +14,6 @@ public class UserMapper {
     }
 
     public static User mapToUser(UserDto userDto) {
-        /*return User.builder()
-                .id(userDto.getId())
-                .name(userDto.getName())
-                .email(userDto.getEmail())
-                .build();*/
         return new User(
                 userDto.getId(),
                 userDto.getName(),

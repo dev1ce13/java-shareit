@@ -20,7 +20,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User getById(long userId) {
-         return users.stream()
+        return users.stream()
                 .filter(u -> u.getId() == userId)
                 .findFirst()
                 .orElse(null);

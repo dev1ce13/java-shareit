@@ -80,13 +80,13 @@ public class UserServiceTest {
     public void createUserWithDuplicateEmailTest() {
         Mockito
                 .when(repository.save(Mockito.any(User.class)))
-                .thenThrow(new DuplicateEmailException("User with email=asd@mail.ru already exists"));
+                .thenThrow(new DuplicateEmailException("User with email=email2@mail.ru already exists"));
 
         final DuplicateEmailException exception = Assertions.assertThrows(
                 DuplicateEmailException.class,
                 () -> userService.create(getUserDto()));
 
-        Assertions.assertEquals("User with email=asd@mail.ru already exists", exception.getMessage());
+        Assertions.assertEquals("User with email=email2@mail.ru already exists", exception.getMessage());
     }
 
     @Test

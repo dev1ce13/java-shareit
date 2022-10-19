@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.shareit.booking.controller.BookingController;
 import ru.practicum.shareit.item.controller.ItemController;
 import ru.practicum.shareit.item.exception.IllegalUserException;
+import ru.practicum.shareit.request.controller.ItemRequestController;
 import ru.practicum.shareit.user.controller.UserController;
 import ru.practicum.shareit.user.exception.DuplicateEmailException;
 
@@ -17,7 +18,8 @@ import java.util.Map;
 @RestControllerAdvice(assignableTypes = {
         UserController.class,
         ItemController.class,
-        BookingController.class
+        BookingController.class,
+        ItemRequestController.class
 })
 public class ErrorHandler {
 

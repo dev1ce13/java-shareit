@@ -1,6 +1,8 @@
 package ru.practicum.shareit.booking;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -10,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.booking.controller.BookingController;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingOutput;
+import ru.practicum.shareit.booking.exception.BookingValidateException;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.item.model.Item;
@@ -145,5 +148,26 @@ public class BookingControllerTest {
                 .andExpect(jsonPath("$[0].status", is(String.valueOf(bookingOutput.getStatus()))))
                 .andExpect(jsonPath("$[0].booker", is(bookingOutput.getBooker()), User.class))
                 .andExpect(jsonPath("$[0].item", is(bookingOutput.getItem()), Item.class));
+    }
+
+    @Test
+    void addNotValidBooking() throws Exception {
+        when(bookingService.add(any(), anyLong()))
+                .thenThrow(new BookingValidateException("Data does not validation"));
+
+        final BookingValidateException exception = Assertions.assertThrows(
+                BookingValidateException.class,
+                () -> bookingService.add(bookingDto, 1L));
+
+        Assertions.assertEquals("Data does not validation", exception.getMessage());
+
+        mvc.perform(post("/bookings")
+                        .content(mapper.writeValueAsString(bookingDto))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("X-Sharer-User-Id", 1L))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.error", is(exception.getMessage())));
     }
 }

@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.practicum.shareit.user.exception.IllegalUserException;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.exception.DuplicateEmailException;
@@ -100,5 +101,18 @@ public class UserServiceTest {
                 () -> userService.getById(1));
 
         Assertions.assertEquals("User with ID=1 not found", exception.getMessage());
+    }
+
+    @Test
+    public void updateUserTest() {
+        Mockito
+                .when(repository.findById(Mockito.anyLong()))
+                .thenThrow(new IllegalUserException("User with ID=1 does not have access to user with ID=2"));
+
+        final IllegalUserException exception = Assertions.assertThrows(
+                IllegalUserException.class,
+                () -> userService.update(getUserDto(), 1L));
+
+        Assertions.assertEquals("User with ID=1 does not have access to user with ID=2", exception.getMessage());
     }
 }

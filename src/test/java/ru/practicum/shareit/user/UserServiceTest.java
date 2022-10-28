@@ -104,15 +104,100 @@ public class UserServiceTest {
     }
 
     @Test
-    public void updateUserTest() {
+    public void updateIllegalUserTest() {
         Mockito
                 .when(repository.findById(Mockito.anyLong()))
-                .thenThrow(new IllegalUserException("User with ID=1 does not have access to user with ID=2"));
+                .thenReturn(Optional.of(getUser()));
 
         final IllegalUserException exception = Assertions.assertThrows(
                 IllegalUserException.class,
+                () -> userService.update(getUserDto(), 2L));
+
+        Assertions.assertEquals("User with ID=2 does not have access to user with ID=1", exception.getMessage());
+    }
+
+    @Test
+    public void updateTest() {
+        Mockito
+                .when(repository.findById(Mockito.anyLong()))
+                .thenReturn(Optional.of(getUser()));
+        Mockito
+                .when(repository.save(Mockito.any()))
+                .thenReturn(getUser());
+
+        var result = userService.update(getUserDto(), 1L);
+
+        Assertions.assertEquals(1, result.getId());
+        Assertions.assertEquals("name", result.getName());
+        Assertions.assertEquals("asd@mail.ru", result.getEmail());
+    }
+
+    @Test
+    public void deleteTest() {
+        Mockito
+                .when(repository.save(Mockito.any(User.class)))
+                .thenReturn(getUser());
+        userService.create(getUserDto());
+        Mockito
+                .when(repository.findById(Mockito.anyLong()))
+                .thenReturn(Optional.of(getUser()));
+        userService.deleteById(1);
+
+        List<UserDto> result = userService.getAll();
+
+        Assertions.assertEquals(List.of(), result);
+    }
+
+    @Test
+    public void updateNotExistsUser() {
+        Mockito
+                .when(repository.findById(Mockito.anyLong()))
+                .thenReturn(Optional.empty());
+
+        final UserNotFoundException exception = Assertions.assertThrows(
+                UserNotFoundException.class,
                 () -> userService.update(getUserDto(), 1L));
 
-        Assertions.assertEquals("User with ID=1 does not have access to user with ID=2", exception.getMessage());
+        Assertions.assertEquals("User with ID=1 not found", exception.getMessage());
+    }
+
+    @Test
+    public void updateEmail() {
+        Mockito
+                .when(repository.save(Mockito.any()))
+                .thenReturn(getUser());
+        userService.create(getUserDto());
+        Mockito
+                .when(repository.findById(Mockito.anyLong()))
+                .thenReturn(Optional.of(getUser()));
+        Mockito
+                .when(repository.save(Mockito.any()))
+                .thenReturn(new User(1L, "name", "test@mail.com"));
+
+        var result = userService.update(UserDto.builder().email("test@mail.com").build(), 1L);
+
+        Assertions.assertEquals(1, result.getId());
+        Assertions.assertEquals("name", result.getName());
+        Assertions.assertEquals("test@mail.com", result.getEmail());
+    }
+
+    @Test
+    public void updateName() {
+        Mockito
+                .when(repository.save(Mockito.any()))
+                .thenReturn(getUser());
+        userService.create(getUserDto());
+        Mockito
+                .when(repository.findById(Mockito.anyLong()))
+                .thenReturn(Optional.of(getUser()));
+        Mockito
+                .when(repository.save(Mockito.any()))
+                .thenReturn(new User(1L, "new_name", "asd@mail.ru"));
+
+        var result = userService.update(UserDto.builder().name("new_name").build(), 1L);
+
+        Assertions.assertEquals(1, result.getId());
+        Assertions.assertEquals("new_name", result.getName());
+        Assertions.assertEquals("asd@mail.ru", result.getEmail());
     }
 }

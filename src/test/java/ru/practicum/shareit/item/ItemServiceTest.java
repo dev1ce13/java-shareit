@@ -91,6 +91,60 @@ public class ItemServiceTest {
     }
 
     @Test
+    public void updateNameTest() {
+        Mockito
+                .when(repository.findById(anyLong()))
+                .thenReturn(Optional.of(getItem()));
+        Mockito
+                .when(repository.save(any()))
+                .thenReturn(new Item(1, "test2", "desc", true, 1, null));
+
+        var result = itemService.update(1L, ItemDto.builder().name("test2").build(), 1L);
+
+        Assertions.assertEquals(1, result.getId());
+        Assertions.assertEquals("test2", result.getName());
+        Assertions.assertEquals("desc", result.getDescription());
+        Assertions.assertEquals(true, result.getAvailable());
+        Assertions.assertNull(result.getRequestId());
+    }
+
+    @Test
+    public void updateDescriptionTest() {
+        Mockito
+                .when(repository.findById(anyLong()))
+                .thenReturn(Optional.of(getItem()));
+        Mockito
+                .when(repository.save(any()))
+                .thenReturn(new Item(1, "name", "desc2", true, 1, null));
+
+        var result = itemService.update(1L, ItemDto.builder().description("desc2").build(), 1L);
+
+        Assertions.assertEquals(1, result.getId());
+        Assertions.assertEquals("name", result.getName());
+        Assertions.assertEquals("desc2", result.getDescription());
+        Assertions.assertEquals(true, result.getAvailable());
+        Assertions.assertNull(result.getRequestId());
+    }
+
+    @Test
+    public void updateAvailableTest() {
+        Mockito
+                .when(repository.findById(anyLong()))
+                .thenReturn(Optional.of(getItem()));
+        Mockito
+                .when(repository.save(any()))
+                .thenReturn(new Item(1, "name", "desc", false, 1, null));
+
+        var result = itemService.update(1L, ItemDto.builder().available(false).build(), 1L);
+
+        Assertions.assertEquals(1, result.getId());
+        Assertions.assertEquals("name", result.getName());
+        Assertions.assertEquals("desc", result.getDescription());
+        Assertions.assertEquals(false, result.getAvailable());
+        Assertions.assertNull(result.getRequestId());
+    }
+
+    @Test
     public void getByIdTest() {
         Mockito
                 .when(repository.findById(anyLong()))

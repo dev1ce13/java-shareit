@@ -81,6 +81,20 @@ public class RequestServiceTest {
     }
 
     @Test
+    public void getRequestsWithSizeIsNullTest() {
+        Mockito
+                .when(repository.findAllByRequester_IdNotOrderByCreatedDesc(anyLong()))
+                .thenReturn(List.of(getRequest()));
+
+        List<ItemRequestWithAnswerDto> result = requestService.getRequests(1, 0, null);
+
+        Assertions.assertEquals(1, result.get(0).getId());
+        Assertions.assertEquals("desc", result.get(0).getDescription());
+        Assertions.assertEquals(1, result.get(0).getRequester().getId());
+        Assertions.assertEquals(LocalDateTime.of(2020, 1, 1, 1, 1), result.get(0).getCreated());
+    }
+
+    @Test
     public void getRequestByIdTest() {
         Mockito
                 .when(repository.findById(anyLong()))
@@ -106,4 +120,19 @@ public class RequestServiceTest {
 
         Assertions.assertEquals("Request with ID=1 not found", exception.getMessage());
     }
+
+    @Test
+    public void getRequestsWithFromMoreListSizeTest() {
+        Mockito
+                .when(repository.findAllByRequester_IdNotOrderByCreatedDesc(anyLong()))
+                .thenReturn(List.of(getRequest()));
+
+        final IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> requestService.getRequests(1, 2, 1));
+
+        Assertions.assertEquals("Parameter from must be lower size list", exception.getMessage());
+    }
+
+
 }

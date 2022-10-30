@@ -11,7 +11,7 @@ import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemsByOwnerDto;
-import ru.practicum.shareit.item.exception.IllegalUserException;
+import ru.practicum.shareit.user.exception.IllegalUserException;
 import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.mapper.CommentMapper;
 import ru.practicum.shareit.item.mapper.ItemMapper;
@@ -82,45 +82,86 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public List<ItemsByOwnerDto> getItemsByUserId(long userId) {
+    public List<ItemsByOwnerDto> getItemsByUserId(long userId, int from, Integer size) {
         userService.getById(userId);
         List<Item> items = repository.findAllByOwnerId(userId);
-        return items.stream()
-                .map(ItemMapper::mapToItemsByOwnerDto)
-                .peek(i -> i.setLastBooking(BookingMapper.mapToBookingDto(
-                                bookingRepository.findByItem_IdAndEndBeforeAndStatusNotOrderByEndDesc(
-                                        i.getId(),
-                                        LocalDateTime.now(),
-                                        BookingStatus.REJECTED)
-                        ))
-                )
-                .peek(i -> i.setNextBooking(BookingMapper.mapToBookingDto(
-                                bookingRepository.findByItem_IdAndStatusAndStartAfterOrderByStartAsc(
-                                        i.getId(),
-                                        BookingStatus.APPROVED,
-                                        LocalDateTime.now())
-                        ))
-                )
-                .peek(i -> {
-                    i.setComments(commentRepository.findAllByItemId(i.getId()).stream()
-                            .map(CommentMapper::mapToCommentDto)
-                            .collect(Collectors.toSet()));
-                })
-                .sorted((i1, i2) -> (int) (i1.getId() - i2.getId()))
-                .collect(Collectors.toList());
+        checkingFromParameter(from, items.size());
+        if (size != null) {
+            return items.subList(from, items.size())
+                    .stream()
+                    .limit(size)
+                    .map(ItemMapper::mapToItemsByOwnerDto)
+                    .peek(i -> i.setLastBooking(BookingMapper.mapToBookingDto(
+                                    bookingRepository.findByItem_IdAndEndBeforeAndStatusNotOrderByEndDesc(
+                                            i.getId(),
+                                            LocalDateTime.now(),
+                                            BookingStatus.REJECTED)
+                            ))
+                    )
+                    .peek(i -> i.setNextBooking(BookingMapper.mapToBookingDto(
+                                    bookingRepository.findByItem_IdAndStatusAndStartAfterOrderByStartAsc(
+                                            i.getId(),
+                                            BookingStatus.APPROVED,
+                                            LocalDateTime.now())
+                            ))
+                    )
+                    .peek(i -> {
+                        i.setComments(commentRepository.findAllByItemId(i.getId()).stream()
+                                .map(CommentMapper::mapToCommentDto)
+                                .collect(Collectors.toSet()));
+                    })
+                    .sorted((i1, i2) -> (int) (i1.getId() - i2.getId()))
+                    .collect(Collectors.toList());
+        } else {
+            return items.subList(from, items.size())
+                    .stream()
+                    .map(ItemMapper::mapToItemsByOwnerDto)
+                    .peek(i -> i.setLastBooking(BookingMapper.mapToBookingDto(
+                                    bookingRepository.findByItem_IdAndEndBeforeAndStatusNotOrderByEndDesc(
+                                            i.getId(),
+                                            LocalDateTime.now(),
+                                            BookingStatus.REJECTED)
+                            ))
+                    )
+                    .peek(i -> i.setNextBooking(BookingMapper.mapToBookingDto(
+                                    bookingRepository.findByItem_IdAndStatusAndStartAfterOrderByStartAsc(
+                                            i.getId(),
+                                            BookingStatus.APPROVED,
+                                            LocalDateTime.now())
+                            ))
+                    )
+                    .peek(i -> {
+                        i.setComments(commentRepository.findAllByItemId(i.getId()).stream()
+                                .map(CommentMapper::mapToCommentDto)
+                                .collect(Collectors.toSet()));
+                    })
+                    .sorted((i1, i2) -> (int) (i1.getId() - i2.getId()))
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override
     @Transactional
-    public List<ItemDto> getSearch(String text) {
+    public List<ItemDto> getSearch(String text, int from, Integer size) {
         if (text.isEmpty()) {
             return List.of();
         }
         List<Item> items = repository.findAllByNameOrDescriptionContainingIgnoreCase(text, text);
-        return items.stream()
-                .filter(Item::getAvailable)
-                .map(ItemMapper::mapToItemDto)
-                .collect(Collectors.toList());
+        checkingFromParameter(from, items.size());
+        if (size != null) {
+            return items.subList(from, items.size())
+                    .stream()
+                    .filter(Item::getAvailable)
+                    .limit(size)
+                    .map(ItemMapper::mapToItemDto)
+                    .collect(Collectors.toList());
+        } else {
+            return items.subList(from, items.size())
+                    .stream()
+                    .filter(Item::getAvailable)
+                    .map(ItemMapper::mapToItemDto)
+                    .collect(Collectors.toList());
+        }
     }
 
     @Transactional
@@ -136,12 +177,18 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public CommentDto addComment(CommentDto commentDto, long userId, long itemId) {
-        Comment comment = CommentMapper.mapToComment(commentDto, UserMapper.mapToUser(userService.getById(userId)), itemId);
+        Comment comment = CommentMapper.mapToComment(
+                commentDto,
+                UserMapper.mapToUser(userService.getById(userId)),
+                itemId);
         Booking booking = bookingRepository.findByBookerIdAndItem_IdAndEndBefore(userId, itemId, LocalDateTime.now());
         if (booking != null) {
             return CommentMapper.mapToCommentDto(commentRepository.save(comment));
         } else {
-            throw new IllegalArgumentException(String.format("User with ID=%s does not use item with ID=%s", userId, itemId));
+            throw new IllegalArgumentException(
+                    String.format("User with ID=%s does not use item with ID=%s",
+                            userId,
+                            itemId));
         }
     }
 
@@ -159,5 +206,11 @@ public class ItemServiceImpl implements ItemService {
             newItem.setRequestId(oldItem.getRequestId());
         }
         return newItem;
+    }
+
+    private void checkingFromParameter(int from, int listSize) {
+        if (from > listSize) {
+            throw new IllegalArgumentException("Parameter from must be lower size list");
+        }
     }
 }

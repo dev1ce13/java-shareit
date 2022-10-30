@@ -93,21 +93,38 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public List<BookingOutput> getUserBookings(BookingState state, long userId) {
+    public List<BookingOutput> getUserBookings(BookingState state, long userId, int from, Integer size) {
         userService.getById(userId);
         List<Booking> bookings = repository.findAllByBookerIdOrderByStartDesc(userId);
-        return filteringByState(bookings, state);
+        List<BookingOutput> result = filteringByState(bookings, state);
+        checkingFromParameter(from, result.size());
+        if (size != null) {
+            return result.subList(from, result.size())
+                    .stream()
+                    .limit(size)
+                    .collect(Collectors.toList());
+        } else {
+            return result.subList(from, result.size());
+        }
     }
 
     @Override
     @Transactional
-    public List<BookingOutput> getBookingItemsByOwner(BookingState state, long userId) {
+    public List<BookingOutput> getBookingItemsByOwner(BookingState state, long userId, int from, Integer size) {
         userService.getById(userId);
         List<Booking> bookings = repository.findAllByItem_OwnerIdOrderByStartDesc(userId);
-        return filteringByState(bookings, state);
+        List<BookingOutput> result = filteringByState(bookings, state);
+        checkingFromParameter(from, result.size());
+        if (size != null) {
+            return result.subList(from, result.size())
+                    .stream()
+                    .limit(size)
+                    .collect(Collectors.toList());
+        } else {
+            return result.subList(from, result.size());
+        }
     }
 
-    @Transactional
     private List<BookingOutput> filteringByState(List<Booking> bookings, BookingState state) {
         if (state.equals(BookingState.CURRENT)) {
             return bookings.stream()
@@ -140,6 +157,12 @@ public class BookingServiceImpl implements BookingService {
             return bookings.stream()
                     .map(BookingMapper::mapToBookingOutput)
                     .collect(Collectors.toList());
+        }
+    }
+
+    private void checkingFromParameter(int from, int listSize) {
+        if (from > listSize) {
+            throw new IllegalArgumentException("Parameter from must be lower size list");
         }
     }
 }
